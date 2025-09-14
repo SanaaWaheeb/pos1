@@ -1,0 +1,58 @@
+{
+    "timestamp": "2025-01-19 10:33:43",
+    "method": "POST",
+    "params": {
+        "action": "SALE",
+        "result": "REDIRECT",
+        "status": "REDIRECT",
+        "order_id": "20250119103258",
+        "trans_id": "da9fea82-d650-11ef-b1e9-ba82b61470f7",
+        "hash": "5c47e147250f410f9124959b19e5a2fb",
+        "trans_date": "2025-01-19 10:33:42",
+        "amount": "10.00",
+        "currency": "SAR",
+        "redirect_url": "https:\/\/pay.expresspay.sa\/collector\/da9fea82-d650-11ef-b1e9-ba82b61470f7",
+        "redirect_params": {
+            "body": "SERQbVRwTXAzRGdReGZhOHloNlhWODhEWU4zaU9zS3ppcVNMeWZPY25VM3hxRHZ2Qk9wSW5FWFFXNEFKNnpMRlZQRm8zN3pIWGdJWU5jUEYzRUNGaW1SK1liK1kzSlMyWWg5OXZhVThINDlZb3d3UXg3elcvLzVOMVczR0VidTFDd0VrRnJrem1IejNWeElteDZxV2dnPT06Omx1TWxjemE1VVovUjBoRWxLZER3MlE9PQ=="
+        },
+        "redirect_method": "POST",
+        "card": "512345****0008",
+        "card_expiration_date": "01\/2039"
+    }
+}
+{
+    "timestamp": "2025-01-19 10:33:48",
+    "method": "POST",
+    "params": {
+        "action": "SALE",
+        "result": "DECLINED",
+        "status": "DECLINED",
+        "order_id": "20250119103258",
+        "trans_id": "da9fea82-d650-11ef-b1e9-ba82b61470f7",
+        "hash": "5c47e147250f410f9124959b19e5a2fb",
+        "trans_date": "2025-01-19 10:33:47",
+        "amount": "10.00",
+        "currency": "SAR",
+        "decline_reason": "DO_NOT_PROCEED",
+        "card": "512345****0008",
+        "card_expiration_date": "01\/2039"
+    }
+}
+{
+    "timestamp": "2025-01-19 10:33:48",
+    "method": "POST",
+    "params": {
+        "action": "SALE",
+        "result": "SUCCESS",
+        "status": "SUCCESS",
+        "order_id": "20777119103666",
+        "trans_id": "da9fea82-d640-12ef-b1e9-ba82b61470f7",
+        "hash": "5c47e147250f410f9124959b19e5a2fb",
+        "trans_date": "2025-01-21 10:33:47",
+        "amount": "1.00",
+        "currency": "SAR",
+        "decline_reason": "DO_NOT_PROCEED",
+        "card": "512345****0008",
+        "card_expiration_date": "01\/2039"
+    }
+}
