@@ -21,8 +21,8 @@
     <div class="card h-100 border-0 shadow-sm new-qr-tile">
       <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
         <div class="rounded-circle d-flex align-items-center justify-content-center mb-3"
-             style="width:72px;height:72px;background:rgba(76,175,80,.12);">
-          <i class="ti ti-circle-plus" style="font-size:34px;color:#4CAF50;"></i>
+             style="width:72px;height:72px;background: #F2F2F2;">
+          <i class="ti ti-circle-plus" style="font-size:34px;color:primary;"></i>
         </div>
         <div class="fw-semibold" style="font-size:1.05rem;">{{ __('Create New QR') }}</div>
         <div class="text-muted small">{{ __('Add a new QR payment') }}</div>
@@ -71,7 +71,7 @@
           >
       </div>
 
-      <button type="submit" class="btn btn-success btn-sm">
+      <button type="submit" class="btn btn-primary btn-sm">
           {{ __('Save') }}
       </button>
   </form>
@@ -112,7 +112,7 @@
   </a>
 
   <button type="button"
-          class="btn btn-light-success btn-sm flex-fill d-inline-flex align-items-center justify-content-center gap-1 copy-link"
+          class="btn btn-light-primary btn-sm flex-fill d-inline-flex align-items-center justify-content-center gap-1 copy-link"
           data-link="{{ $storeLink }}">
     <i class="ti ti-copy"></i>
     <span class="text-truncate">{{ __('Copy') }}</span>

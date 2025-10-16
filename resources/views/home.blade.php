@@ -1038,52 +1038,52 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
    $(document).ready(function () {
 
   // 1) PRINT (bind directly to the button)
-  $('.print-link').on('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
+//   $('.print-link').on('click', function (e) {
+//     e.preventDefault();
+//     e.stopPropagation();
 
-    var $cp = $(this).closest('.cp_link');
-    var storeLink  = $cp.attr('data-link') || '';
-    var storeTitle = $cp.attr('data-store-title') || '';
+//     var $cp = $(this).closest('.cp_link');
+//     var storeLink  = $cp.attr('data-link') || '';
+//     var storeTitle = $cp.attr('data-store-title') || '';
 
-    var w = window.open('', '_blank', 'width=420,height=520');
-    w.document.write(`
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>` + storeTitle + ` - QR</title>
-          <style>
-            *{box-sizing:border-box}
-            body{margin:0;padding:24px;font-family:Arial, sans-serif;display:flex;flex-direction:column;align-items:center}
-            h3{margin:0 0 10px}
-            #qrcode{margin:16px auto}
-            .link{font-size:12px;word-break:break-all;text-align:center;max-width:300px;color:#333}
-            @media print {.link{font-size:10px}}
-          </style>
-        </head>
-        <body>
-          <h3>` + storeTitle + `</h3>
-          <div id="qrcode"></div>
-          <div class="link">` + storeLink + `</div>
+//     var w = window.open('', '_blank', 'width=420,height=520');
+//     w.document.write(`
+//       <html>
+//         <head>
+//           <meta charset="utf-8" />
+//           <title>` + storeTitle + ` - QR</title>
+//           <style>
+//             *{box-sizing:border-box}
+//             body{margin:0;padding:24px;font-family:Arial, sans-serif;display:flex;flex-direction:column;align-items:center}
+//             h3{margin:0 0 10px}
+//             #qrcode{margin:16px auto}
+//             .link{font-size:12px;word-break:break-all;text-align:center;max-width:300px;color:#333}
+//             @media print {.link{font-size:10px}}
+//           </style>
+//         </head>
+//         <body>
+//           <h3>` + storeTitle + `</h3>
+//           <div id="qrcode"></div>
+//           <div class="link">` + storeLink + `</div>
 
-          <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"><\/script>
-          <script>
-            new QRCode(document.getElementById('qrcode'), {
-              text: "` + storeLink + `",
-              width: 220,
-              height: 220,
-              correctLevel: QRCode.CorrectLevel.M
-            });
-            window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };
-          <\/script>
-        </body>
-      </html>
-    `);
-    w.document.close();
+//           <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"><\/script>
+//           <script>
+//             new QRCode(document.getElementById('qrcode'), {
+//               text: "` + storeLink + `",
+//               width: 220,
+//               height: 220,
+//               correctLevel: QRCode.CorrectLevel.M
+//             });
+//             window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };
+//           <\/script>
+//         </body>
+//       </html>
+//     `);
+//     w.document.close();
 
-    // toast for print
-    show_toastr('Success', '{{ __("Print started successfully") }}', 'success');
-  });
+//     // toast for print
+//     show_toastr('Success', '{{ __("Print started successfully") }}', 'success');
+//   });
 
   // 2) COPY (ignore clicks coming from the print button)
   $('.cp_link').on('click', function (e) {
@@ -1101,6 +1101,216 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
 });
 
 </script>
+<script>
+(function () {
+  // ---- absolute URLs for assets (Blade expands these before JS runs) ----
+  const ASSETS = {
+    logo : @json(url(Storage::url('uploads/theme5/ava.png'))),
+    mada : @json(url(Storage::url('uploads/theme5/mada.png'))),
+    apple: @json(url(Storage::url('uploads/theme5/apple_pay.png'))),
+    mc   : @json(url(Storage::url('uploads/theme5/master_card.png'))),
+    visa : @json(url(Storage::url('uploads/theme5/visa.png'))),
+    step1: @json(url(Storage::url('uploads/theme5/amount.png'))),
+    step2: @json(url(Storage::url('uploads/theme5/payment.png'))),
+    step3: @json(url(Storage::url('uploads/theme5/confirm.png')))
+  };
+
+  // ---- A4 printable HTML (same style as you provided) ----
+  function buildPrintHtml({ title, link }) {
+    return `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<title>${title}</title>
+<style>
+  /* Exact A4 and keep background colors in print */
+  @page { size: A4; margin: 0; }
+  *      { box-sizing: border-box; }
+  html, body {
+    width: 210mm; height: 297mm; margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+    font-family: "Noto Kufi Arabic", Arial, sans-serif;
+  }
+
+  .poster{
+    position: relative;
+    width: 210mm; height: 297mm;
+    margin: 0 auto;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  /* header */
+  .header{
+    position: relative; height: 48mm;
+  }
+  .header .black{
+    position:absolute; inset:0 0 20mm 0; /* 40mm high */
+    height:40mm; background:#000;
+  }
+  .header .skewL{ left:-10mm; transform: rotate(9deg); }
+  .header .skewR{ right:-10mm; transform: rotate(-9deg); }
+  .header .logo{
+    position:absolute; top:6mm; left:0; right:0;
+    display:flex; justify-content:center; align-items:center; height:28mm;
+  }
+  .header .logo img{ height:25mm; }
+
+  /* payment row */
+  .pay{
+    text-align:center; padding-top: 2mm;
+  }
+  .pay .title{
+    font-weight:700; color:#242424; font-size:23pt; line-height:1.4; margin-bottom:4mm;
+  }
+  .brands{ display:inline-flex; align-items:center; gap:8mm; }
+  .brands img{ height:10mm; }
+
+  /* QR area */
+  .qr{
+    margin: 10mm auto 4mm auto;
+    width: 55mm;   /* FINAL QR SIZE */
+    height:100mm;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* qrcodejs injects a <img> or <canvas> → clamp it here */
+  .qr img, .qr canvas{ width:111mm !important; height:111mm !important; }
+
+  .qr-captions{
+    display:flex; justify-content:center; gap:10mm; text-align:center;
+    font-weight:700; color:#242424; font-size:17pt; line-height:25px;
+  }
+
+  /* footer */
+  .footer{
+    position:absolute; left:0; right:0; bottom:0;
+    height:75mm; background:#000; color:#fff; padding:10mm;
+  }
+  .footer .head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-weight:700;
+  }
+  .footer .head .en, .footer .head .ar{font-size:18pt;}
+
+  .steps{
+    margin-top:4mm; display:flex; justify-content:space-between; gap:8mm; text-align:center;
+    position:relative; padding-top:6mm;
+  }
+  /* dotted connector through the numbers */
+//   .steps::before{
+//     content:""; position:absolute; left:8mm; right:8mm; top:10mm;
+//     border-top:1mm dotted rgba(255,255,255,.95); z-index:1;
+//   }
+  .step{ flex:1; }
+  .num{
+    position:relative; z-index:2;
+    width:8mm; height:8mm; border-radius:50%; background:#fff; color:#000;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:10pt; margin-bottom:3mm;
+  }
+  .icon{ height:13mm; margin-bottom:3mm; }
+  .step .ar{ font-weight:700; font-size:18pt;  line-height:13px; margin-bottom:1mm; }
+  .step .en{ font-weight:600; font-size:18pt;  line-height:40px; opacity:.95; }
+
+  .ltr{ direction:ltr; display:inline-block; }
+</style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header">
+      <div class="black"></div>
+      <div class="skewL"></div>
+      <div class="skewR"></div>
+      <div class="logo"><img src="${ASSETS.logo}" alt="AVA"></div>
+    </div>
+
+    <div class="pay">
+      <div class="title"><span>للدفع بالوسائل</span> <span class="ltr">TO PAY USING</span></div>
+      <div class="brands">
+        <img src="${ASSETS.mada}"  alt="mada">
+        <img src="${ASSETS.apple}" alt="Apple Pay">
+        <img src="${ASSETS.mc}"    alt="Mastercard">
+        <img src="${ASSETS.visa}"  alt="VISA">
+      </div>
+    </div>
+
+    <div class="qr" id="qrBox"></div>
+<br/>
+<br/>
+    <div class="qr-captions">
+      <div>امسح الباركود <br>بكاميرا الجوال</div>
+      <div>SCAN QR USING <br>PHONE CAMERA</div>
+    </div>
+
+    <div class="footer">
+      <div class="head">
+        <div class="en">NEXT STEPS</div>
+        <div class="ar">الخطوات التالية</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <img class="icon" src="${ASSETS.step1}" alt="">
+          <div class="ar">ادخل المبلغ</div>
+          <div class="en">Enter the amount</div>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <img class="icon" src="${ASSETS.step2}" alt="">
+          <div class="ar">قم بالدفع</div>
+          <div class="en">Make the payment</div>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <img class="icon" src="${ASSETS.step3}" alt="">
+          <div class="ar">تأكيد الدفع</div>
+          <div class="en">Confirmation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"><\/script>
+  <script>
+    // Render QR; CSS clamps it to 55mm
+    new QRCode(document.getElementById('qrBox'), {
+      text: ${JSON.stringify(link)},
+      width: 900, height: 900, correctLevel: QRCode.CorrectLevel.M
+    });
+    window.onload = function(){ setTimeout(function(){ window.print(); }, 500); };
+  <\/script>
+</body>
+</html>`;
+  }
+
+  // ---- jQuery PRINT handler (uses the same style above) ----
+  $(document).on('click', '.print-link', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // read data from the button (fallback to closest .cp_link if you use that wrapper)
+    var $btn  = $(this);
+    var $cp   = $btn.closest('.cp_link');
+    var link  = ($btn.data('link') || $cp.attr('data-link') || '').toString();
+    var title = ($btn.data('store-title') || $cp.attr('data-store-title') || 'QR').toString();
+
+    if (!link) { alert('Missing store link'); return; }
+
+    var w = window.open('', '_blank', 'width=1024,height=1366');
+    w.document.open();
+    w.document.write(buildPrintHtml({ title, link }));
+    w.document.close();
+
+    if (typeof show_toastr === 'function') {
+      show_toastr('Success', '{{ __("Print started successfully") }}', 'success');
+    }
+  });
+})();
+</script>
+
 @endif
 @endpush
 
