@@ -149,7 +149,7 @@ Route::any('/store/call_back', [BenefitPaymentController::class, 'storeCall_back
 
 Route::group(['middleware' => ['verified']], function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware(['XSS']);
+    Route::match(['get','post'],'/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware(['XSS']);
 
 
     // product category
@@ -265,6 +265,22 @@ Route::group(['middleware' => ['verified']], function () {
     Route::post('shipping/import', [ShippingController::class, 'fileImport'])->name('shipping.import');
 
     Route::resource('shipping', ShippingController::class)->middleware(['auth', 'XSS']);
+    // added qr stores
+  Route::middleware(['auth'])->group(function () {
+    Route::get('/qr-stores', [DashboardController::class, 'qrStores'])
+        ->name('stores.qr.index');
+
+    Route::get('/stores/{store}/visit', [DashboardController::class, 'visitStore'])
+        ->name('stores.visit')
+        ->whereNumber('store');
+});
+// routes/web.php
+Route::patch('/stores/{store}/mobile', [DashboardController::class, 'updateStoreMobile'])
+    ->name('stores.updateMobile')
+    ->middleware('auth');
+    // routes/web.php
+
+
 
     Route::resource('location', LocationController::class)->middleware(['auth', 'XSS']);
     Route::resource('custom-page', PageOptionController::class)->middleware(['auth','Lang']);

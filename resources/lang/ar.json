@@ -1631,6 +1631,14 @@
   "Safe money transfer using your bank account. We support Mastercard, Visa and Skrill":"تحويل آمن للأموال باستخدام حسابك البنكي. نحن ندعم بطاقات Mastercard وVisa ومنصة Skrill",
   "Enter Your Mobile Number":"ادخل رقم هاتفك",
   "Enter Your Channel Code":"ادخل كود القناة",
-  "SR Currency is not currently supported in PayPal.":"عملة الريال السعودي حاليا ليست مدعومة في PayPal"
+  "SR Currency is not currently supported in PayPal.":"عملة الريال السعودي حاليا ليست مدعومة في PayPal",
+  "Solutions":"الحلول",
+  "Create New QR":"إنشاء QR جديد",
+  "Create QR":"إنشاء QR",
+  "Enter a valid mobile.":"أدخل رقم هاتف صحيح",
+  "Manage Solutions":"إدارة الحلول",
+  "Visit Dashboard":"الذهاب للرئيسية",
+  "Add a new QR payment":"إضافة QR جديد",
+  "QR Payments":"مدفوعات الـ QR"
   
 }

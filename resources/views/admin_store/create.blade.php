@@ -1,5 +1,48 @@
-
+@php
+  $type = $type ?? request('type', 'store');
+  $isQr = ($type === 'qr');
+@endphp
 {{Form::open(array('url'=>'store-resource','method'=>'post', 'class'=>'needs-validation', 'novalidate'))}}
+
+
+<input type="hidden" name="mode" value="{{ $isQr ? 'qr' : 'store' }}">
+
+@if ($isQr)
+  {{-- ====================== QR MODE ====================== --}}
+  {{-- Lock theme to theme5 (not strictly required if controller forces it, but fine) --}}
+  <input type="hidden" name="themefile" value="theme5">
+  {{-- If you need a variant key in DB, include it; else controller can force it --}}
+  {{-- <input type="hidden" name="theme_color" value="theme5-v1"> --}}
+
+  <div class="row mt-2">
+    <div class="col-12">
+      <div class="form-group">
+        {{ Form::label('mobile', __('Mobile Number'), ['class' => 'form-label']) }}<x-required></x-required>
+        {{ Form::text('mobile', null, [
+            'class' => 'form-control',
+            'placeholder' => __('e.g. +9665XXXXXXXX'),
+            'required' => 'required',
+            'pattern' => '^\+?[0-9]{8,15}$',
+            'inputmode' => 'numeric'
+        ]) }}
+        <small class="text-muted">{{ __('Enter a valid mobile.') }}</small>
+      </div>
+
+      {{-- <div class="mt-3">
+        <div class="form-text">{{ __('Theme is preset to Theme 5.') }}</div>
+        <img class="img-fluid rounded border mt-1"
+             alt="Theme 5 preview"
+             src="{{ asset(Storage::url('uploads/store_theme/theme5/Home.png')) }}">
+      </div> --}}
+    </div>
+
+    <div class="form-group col-12 d-flex justify-content-end mt-3">
+      <input type="button" value="{{ __('Cancel') }}" class="btn btn-secondary" data-bs-dismiss="modal">
+      <input type="submit" value="{{ __('Create QR') }}" class="btn btn-primary ms-2">
+    </div>
+  </div>
+@else
+
 <div class="d-flex justify-content-end">
     @php
         $plan = \App\Models\Plan::find(\Auth::user()->plan);
@@ -67,7 +110,7 @@
             <div class="form-group">
                 {{Form::label('store_name',__('Store Solution'),array('class'=>'form-label mb-0'))}}<x-required></x-required>
             </div>
-            {{ Form::hidden('themefile', null, ['id' => 'themefile1']) }} {{-- --------- Added -------- --}}
+            {{ Form::hidden('theme_dir', null, ['id' => 'theme1']) }} {{-- --------- Added -------- --}}
             <div class="border border-primary rounded p-3">
                 <div class="row gy-4 ">
                     {{ Form::hidden('themefile', null, ['id' => 'themefile1']) }}
@@ -143,5 +186,5 @@
         </script>
     @endif
 </div>
-
+@endif
 {{Form::close()}}

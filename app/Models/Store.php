@@ -8,6 +8,9 @@ class Store extends Model
 {
     protected $fillable = [
         'name',
+        'type',         
+        'qr_serial',
+        'mobile',
         'email',
         'store_theme',
         'theme_dir',

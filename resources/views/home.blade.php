@@ -114,10 +114,19 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- [ sample-page ] start -->
+   
     <div class="row row-gap dashboard-main-row mb-4">
-        <div class="col-xxl-6 col-12 d-xxl-flex">
+        
+                
+                {{-- CHANGED --}}
+                @if($store_id['theme_dir']=='theme5')
+                 <div class="col-xl-2 col-12 d-xl-flex">
+                  <div class="d-flex flex-wrap">
+                @else
+                <div class="col-xl-5 col-12 d-xl-flex">
             <div class="d-flex flex-wrap w-100 row-gap">
                 <div class="col-md-9 col-sm-8 col-12">
+                      
                     <div class="dashboard-card">
                         <img src="{{asset(Storage::url('uploads/dashboard/layer.png'))}}" class="dashboard-card-layer" alt="layer">
                         <div class="dashboard-card-bg">
@@ -188,9 +197,17 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
                                     </svg>
                             </div>
                         </div>
+                        
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-4 col-12">
+                @endif
+
+                @if($store_id['theme_dir']=='theme5')
+                <div class="col-md-12 col-sm-4 col-12">
+                  @else
+                   <div class="col-md-3 col-sm-4 col-12">
+                  @endif
+               
                     <div class="card qr-card  h-100 mb-0">
                         <div class="qr-card-inner">
                             <div class="text-center qr-card-image">
@@ -209,12 +226,29 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
                                         </div>
                                     </a>
                                 @elseif($store_id['theme_dir']=='theme5')
-                                    <a href="#!" class="btn btn-light-primary w-100 cp_link d-flex align-items-center justify-content-between" data-link="{{ url("{$store_id['slug']}/self-payment") }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ __('Click to copy Store link') }}" style=" padding-left: 10px; padding-right: 10px; ">
-                                        <span>{{ __('Store Link') }}</span>
+                                <a href="#!" class="btn btn-light-primary w-100 cp_link d-flex align-items-center justify-content-between"
+                                    data-link="{{ url("{$store_id['slug']}/self-payment") }}"
+                                        data-store-title="{{ $store_id['slug'] }}"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="{{ __('Click to copy Store link') }}"
+                                    style=" padding-left: 10px; padding-right: 10px; ">
+
+                                    <span>{{ __('Store Link') }}</span>
+
+                                    <div class="d-flex align-items-center" style="gap:6px;">
+                                        {{-- copy button (existing) --}}
                                         <div class="qr-btn-icon btn btn-primary d-flex align-items-center justify-content-center">
-                                            <i class=""data-feather="copy"></i>
+                                        <i data-feather="copy"></i>
                                         </div>
-                                    </a>
+
+                                        {{-- NEW: print button (same look) --}}
+                                        <div class="qr-btn-icon btn btn-primary d-flex align-items-center justify-content-center print-link"
+                                            title="{{ __('Print Barcode / QR') }}">
+                                        <i data-feather="printer"></i>
+                                        </div>
+                                    </div>
+                                </a>
+
                                 @else
                                     <a href="#!" class="btn btn-light-primary w-100 cp_link d-flex align-items-center justify-content-between" data-link="{{  url($store_id['store_url']) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ __('Click to copy Store link') }}" style=" padding-left: 10px; padding-right: 10px; ">
                                         <span>{{ __('Store Link') }}</span>
@@ -224,14 +258,25 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
                                     </a>
                                 @endif
                             </div>
+                            
                         </div>
+                        
+
                     </div>
+                    
                 </div>
+                
             </div>
+            
         </div>
-        <div class="col-xxl-6 col-12">
+        <div class="col-xl-7 col-12">
             <div class="row row-gap d-flex dashboard-card-wrp h-100">
+                {{-- changed --}}
+                @if($store_id['theme_dir']=='theme5')
+                
+                @else
                 <div class="col-md-4 col-sm-6 col-12 d-flex flex-wrap">
+               
                     <div class="dashboard-project-card">
                         <div class="card-inner d-flex justify-content-between">
                             <div class="project-card-bg">
@@ -257,7 +302,9 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
                                 </div>
                                 <div class="card-bottom-content">
                                     <div class="d-flex align-items-center justify-content-between">
+
                                         {{-- <span class="f-30 f-w-600">{{ $newproduct }}</span> --}}
+
                                         <h2 class="mb-0">{{ $newproduct }}</h3>
                                     </div>
                                 </div>
@@ -266,6 +313,8 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
                         </div>
                     </div>
                 </div>
+                @endif
+             
                 <div class="col-md-4 col-sm-6 col-12 d-flex flex-wrap">
 
                     <div class="dashboard-project-card">
@@ -338,14 +387,56 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
 
                                     </div>
                                 </div>
+                                
                             </div>
+                            
 
                         </div>
+                        
                     </div>
+                    
                 </div>
+                @if($store_id['theme_dir']=='theme5')
+                                <div class="form-group col-md-4">
+                                <form action="{{ route('dashboard') }}" method="POST">
+                                    @csrf
+                                <label for="mobile" class="form-label">{{ __('Mobile') }}</label>
+                                <input
+                                    type="text"
+                                    id="mobile"
+                                    name="mobile"
+                                    class="form-control"
+                                    placeholder="{{ __('+966587458874') }}"
+                                    value="{{ old('mobile', $store_id->mobile ?? '') }}"
+                                >
+                                @error('mobile')
+                                    <span class="invalid-mobile" role="alert">
+                                        <strong class="text-danger">{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                                <div class="card-footer p-0">
+                                    <div class="col-sm-12 mt-3 px-2">
+                                        <div class="text-end1">
+                                            <button type="submit" class="btn btn-xs btn-primary">
+                                                {{ __('Save Changes') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                                                 
+                
+                                @else
+                                @endif
             </div>
         </div>
     </div>
+
+    {{-- chanaged --}}
+    @if($store_id['theme_dir']=='theme5')
+    @else
     <div class="row row-gap mb-4">
         <div class="col-md-6 col-12 d-flex flex-column">
             <div class="card mb-0 h-100">
@@ -432,6 +523,7 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
             </div>
         </div>
     </div>
+    @endif
     <div class="row mb-4">
         <div class="col-12">
             <div class="card mb-0 h-100">
@@ -589,17 +681,17 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
 </script>
 @else
 <script>
-    $(document).ready(function() {
-        $('.cp_link').on('click', function() {
-            var value = $(this).attr('data-link');
-            var $temp = $("<input>");
-            $("body").append($temp);
-            $temp.val(value).select();
-            document.execCommand("copy");
-            $temp.remove();
-            show_toastr('Success', '{{ __('Link copied') }}', 'success')
-        });
-    });
+    // $(document).ready(function() {
+    //     $('.cp_link').on('click', function() {
+    //         var value = $(this).attr('data-link');
+    //         var $temp = $("<input>");
+    //         $("body").append($temp);
+    //         $temp.val(value).select();
+    //         document.execCommand("copy");
+    //         $temp.remove();
+    //         show_toastr('Success', '{{ __('Link copied') }}', 'success')
+    //     });
+    // });
     (function () {
         var options = {
             chart: {
@@ -942,6 +1034,72 @@ $company_logo = \App\Models\Utility::getValByName('company_logo');
             $('.sharingButtonsContainer').toggle();
         });
     });
+
+   $(document).ready(function () {
+
+  // 1) PRINT (bind directly to the button)
+  $('.print-link').on('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $cp = $(this).closest('.cp_link');
+    var storeLink  = $cp.attr('data-link') || '';
+    var storeTitle = $cp.attr('data-store-title') || '';
+
+    var w = window.open('', '_blank', 'width=420,height=520');
+    w.document.write(`
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>` + storeTitle + ` - QR</title>
+          <style>
+            *{box-sizing:border-box}
+            body{margin:0;padding:24px;font-family:Arial, sans-serif;display:flex;flex-direction:column;align-items:center}
+            h3{margin:0 0 10px}
+            #qrcode{margin:16px auto}
+            .link{font-size:12px;word-break:break-all;text-align:center;max-width:300px;color:#333}
+            @media print {.link{font-size:10px}}
+          </style>
+        </head>
+        <body>
+          <h3>` + storeTitle + `</h3>
+          <div id="qrcode"></div>
+          <div class="link">` + storeLink + `</div>
+
+          <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"><\/script>
+          <script>
+            new QRCode(document.getElementById('qrcode'), {
+              text: "` + storeLink + `",
+              width: 220,
+              height: 220,
+              correctLevel: QRCode.CorrectLevel.M
+            });
+            window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };
+          <\/script>
+        </body>
+      </html>
+    `);
+    w.document.close();
+
+    // toast for print
+    show_toastr('Success', '{{ __("Print started successfully") }}', 'success');
+  });
+
+  // 2) COPY (ignore clicks coming from the print button)
+  $('.cp_link').on('click', function (e) {
+    if ($(e.target).closest('.print-link').length) return; // <- don't copy on print click
+
+    var value = $(this).attr('data-link');
+    var $temp = $("<input>");
+    $("body").append($temp);
+    $temp.val(value).select();
+    document.execCommand("copy");
+    $temp.remove();
+    show_toastr('Success', '{{ __("Link copied") }}', 'success');
+  });
+
+});
+
 </script>
 @endif
 @endpush

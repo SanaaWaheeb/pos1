@@ -8994,6 +8994,9 @@ textarea.is-invalid.dataTable-input {
 .text-end {
     text-align: right !important;
 }
+.text-end1 {
+    text-align: left !important;
+}
 
 .text-center {
     text-align: center !important;

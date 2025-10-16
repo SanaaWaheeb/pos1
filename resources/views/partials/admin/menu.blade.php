@@ -1,6 +1,8 @@
 @php
     $company_logo = \App\Models\Utility::GetLogo();
     $plan = \Auth::user()->currentPlan;
+    // Current store (safe even if none is selected)
+
 @endphp
 @if (isset($setting['cust_theme_bg']) && $setting['cust_theme_bg'] == 'on')
     <nav class="dash-sidebar light-sidebar transprent-bg">
@@ -159,6 +161,9 @@
                             @endcan
                         </ul>
                     </li>
+                     {{-- changed --}}
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     @can('Manage Themes')
                         <li class="dash-item {{ Request::segment(1) == 'themes' ? ' active' : 'collapsed' }}">
                             <a href="{{ route('themes.theme') }}"
@@ -170,6 +175,7 @@
                             </a>
                         </li>
                     @endcan
+                    @endif
                     <li class="dash-item dash-hasmenu {{ Request::segment(1) == 'users' || Request::segment(1) == 'roles' ? ' active dash-trigger' : 'collapsed' }}">
                         <a href="#!" class="dash-link ">
                             <span class="dash-micon">
@@ -195,6 +201,9 @@
                             @endcan
                         </ul>
                     </li>
+                     {{-- changed --}}
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     @can('Manage Pos')
                         <li class="dash-item {{ Request::segment(1) == 'pos' ? ' active' : 'collapsed' }}">
                             <a href="{{ route('pos.index') }}"
@@ -206,6 +215,9 @@
                             </a>
                         </li>
                     @endcan
+                    @endif
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     <li class="dash-item dash-hasmenu {{ Request::segment(1) == 'product' || Request::segment(1) == 'product_categorie' || Request::segment(1) == 'product_tax' || Request::segment(1) == 'product-coupon' || Request::segment(1) == 'shipping' || Request::segment(1) == 'subscriptions' || Request::segment(1) == 'custom-page' || Request::segment(1) == 'blog' || Request::segment(1) == 'products' ? ' active dash-trigger' : 'collapsed' }}">
                         <a href="#!" class="dash-link">
                             <span class="dash-micon">
@@ -285,6 +297,10 @@
                          
                         </ul>
                     </li>
+                    @endif
+                     {{-- changed --}}
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     @can('Manage Customers')
                         <li
                             class="dash-item {{ Request::segment(1) == 'customer.index' || Request::route()->getName() == 'customer.show' ? ' active dash-trigger ' : 'collapsed' }}">
@@ -297,6 +313,10 @@
                             </a>
                         </li>
                     @endcan
+                    @endif
+                     {{-- changed --}}
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     @can('Manage Plans')
                         <li class="dash-item dash-hasmenu {{ Request::segment(1) == 'plans' || Request::route()->getName() == 'stripe' ? ' active dash-trigger' : 'collapsed' }}">
                             <a href="{{ route('plans.index') }}"
@@ -308,7 +328,10 @@
                             </a>
                         </li>
                     @endcan
-
+                    @endif
+                    {{-- changed --}}
+                    @if($settings['theme_dir'] == 'theme5')
+                    @else
                     @if (Auth::user()->type == 'Owner')
                         <li class="dash-item dash-hasmenu  {{ Request::segment(1) == 'referral-program' ? 'active' : '' }}">
                             <a href="{{ route('referral-program.company') }}" class="dash-link">
@@ -317,7 +340,7 @@
                             </a>
                         </li>
                     @endif
-
+                    @endif
                     @can('Manage Settings')
                     <li class="dash-item dash-hasmenu {{ Request::segment(1) == 'settings' || Request::route()->getName() == 'store.editproducts' ? ' active dash-trigger' : 'collapsed' }}">
                             <a href="{{ route('settings') }}" class="dash-link {{ request()->is('settings') ? 'active' : '' }}">

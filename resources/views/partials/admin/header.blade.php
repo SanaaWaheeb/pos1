@@ -62,7 +62,19 @@
                     </a>
                 </li>
             @endImpersonating
-            @auth('web')
+            {{-- @auth('web')
+                 @if (Auth::user()->type !== 'super admin')
+                    @can('Create Store')
+                        <li class="dropdown dash-h-item drp-language">
+                            <a href="#!" class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn" data-size="lg" data-url="{{ route('store-resource.create') }}"
+                                data-ajax-popup="true" data-title="{{ __('Create New QR') }}">
+                                <i class="ti ti-circle-plus"></i>
+                                <span class="hide-mob">{{ __('Create New QR') }}</span>
+                            </a>
+                        </a>
+                        </li>
+                    @endcan
+                @endif
                 @if (Auth::user()->type !== 'super admin')
                     @can('Create Store')
                         <li class="dropdown dash-h-item drp-language">
@@ -74,51 +86,213 @@
                         </a>
                         </li>
                     @endcan
-                @endif
-            @endauth
-            @if (Auth::user()->type !== 'super admin')
-                <li class="dropdown dash-h-item drp-language">
-                    <a class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
-                        data-bs-toggle="dropdown"
-                        href="#"
-                        role="button"
-                        aria-haspopup="false"
-                        aria-expanded="false" data-bs-toggle="tooltip" data-bs-placement="bottom"   data-bs-original-title="Select your bussiness">
-                        <i class="ti ti-building-store"></i>
-                        <span class="hide-mob">{{__(ucfirst($current_store->name))}}</span>
-                        <i class="ti ti-chevron-down drp-arrow nocolor"></i>
-                    </a>
-                <div class="dropdown-menu dash-h-dropdown dropdown-menu-end">
-                    @php
-                        $user = \Auth::user()->currentuser();
-                    @endphp
-                    @foreach ($user->stores as $store)
-                        @if ($store->is_store_enabled == 1)
-                            <a href="@if (Auth::user()->current_store == $store->id) # @else {{ route('change_store', $store->id) }} @endif"
-                                class="dropdown-item">
-                                @if (Auth::user()->current_store == $store->id)
-                                    <i class="ti ti-checks text-primary"></i>
-                                @endif
-                                <span>{{ $store->name }}</span>
-                            </a>
+                @endif --}}
+                @auth('web')
+    @if (Auth::user()->type !== 'super admin')
+        @can('Create Store')
+            <li class="dropdown dash-h-item drp-language">
+                {{-- Create New QR --}}
+                <a href="#!"
+                   class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+                   data-size="lg"
+                   data-url="{{ route('store-resource.create', ['type' => 'qr']) }}"
+                   data-ajax-popup="true"
+                   data-title="{{ __('Create New QR') }}">
+                    <i class="ti ti-circle-plus"></i>
+                    <span class="hide-mob">{{ __('Create New QR') }}</span>
+                </a>
+            </li>
+        @endcan
+    @endif
+
+    @if (Auth::user()->type !== 'super admin')
+        @can('Create Store')
+            <li class="dropdown dash-h-item drp-language">
+                {{-- Create New Store --}}
+                <a href="#!"
+                   class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+                   data-size="lg"
+                   data-url="{{ route('store-resource.create', ['type' => 'store']) }}"
+                   data-ajax-popup="true"
+                   data-title="{{ __('Create New Store') }}">
+                    <i class="ti ti-circle-plus"></i>
+                    <span class="hide-mob">{{ __('Create New Store') }}</span>
+                </a>
+            </li>
+        @endcan
+    @endif
+@endauth
+
+
+                {{-- @if (Auth::user()->type !== 'super admin')
+  @can('Create Store')
+    <li class="dropdown dash-h-item drp-language d-flex gap-2">
+    
+      <a href="#!"
+         class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+         data-size="lg"
+         data-url="{{ route('store-resource.create') }}?mode=store"
+         data-ajax-popup="true"
+         data-title="{{ __('Create New Store') }}">
+        <i class="ti ti-circle-plus"></i>
+        <span class="hide-mob">{{ __('Create New Store') }}</span>
+      </a>
+
+      
+      <a href="#!"
+         class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+         data-size="lg"
+         data-url="{{ route('store-resource.create') }}?mode=qr"
+         data-ajax-popup="true"
+         data-title="{{ __('Create New QR') }}">
+        <i class="ti ti-circle-plus"></i>
+        <span class="hide-mob">{{ __('Create New QR') }}</span>
+      </a>
+    </li>
+  @endcan
+@endif --}}
+
+         @php
+    // Pull all stores with full columns (so 'type' is present)
+    $user = \Auth::user()->currentuser();
+    $allStores = $user
+        ? $user->stores()->select('stores.*', 'user_stores.permission')->get()
+        : collect();
+
+    $regularStores = $allStores->where('type', '!=', 'qr');
+    $qrStores      = $allStores->where('type', 'qr')->sortBy('qr_serial');
+
+    $currentId = Auth::user()->current_store;
+
+    // ===== Menu labels =====
+    // Regular label: use current store only if it's REGULAR, else first regular, else "Stores"
+    $currentRegular = $regularStores->firstWhere('id', $currentId);
+    $regularLabel   = $currentRegular->name
+                    ?? optional($regularStores->first())->name
+                    ?? __('Stores');
+
+    // QR label: use current store only if it's QR, else generic "QR Stores"
+    $currentQr = $qrStores->firstWhere('id', $currentId);
+    $qrLabel   = $currentQr->name ?? __('QR Payments');
+@endphp
+
+{{-- =============================================== --}}
+{{-- ============ REGULAR STORES DROPDOWN =========== --}}
+{{-- =============================================== --}}
+@if (Auth::user()->type !== 'super admin')
+<li class="dropdown dash-h-item drp-language">
+    <a class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+       data-bs-toggle="dropdown"
+       href="#"
+       role="button"
+       aria-haspopup="false"
+       aria-expanded="false"
+       data-bs-toggle="tooltip"
+       data-bs-placement="bottom"
+       data-bs-original-title="{{ __('Select your business') }}">
+        <i class="ti ti-building-store"></i>
+        <span class="hide-mob">{{ $regularLabel }}</span>
+        <i class="ti ti-chevron-down drp-arrow nocolor"></i>
+    </a>
+
+    <div class="dropdown-menu dash-h-dropdown dropdown-menu-end">
+        @foreach ($regularStores as $store)
+            @php $isCurrent = ($currentId == $store->id); @endphp
+
+            @if ($store->is_store_enabled == 1)
+                <a href="{{ $isCurrent ? '#' : route('change_store', $store->id) }}" class="dropdown-item">
+                    @if ($isCurrent)
+                        <i class="ti ti-checks text-primary"></i>
+                    @endif
+                    <span>{{ $store->name }}</span>
+                </a>
+            @else
+                <a href="#!" class="dropdown-item">
+                    <i class="ti ti-lock"></i>
+                    <span>{{ $store->name }}</span>
+                    @if (isset($store->pivot->permission))
+                        @if ($store->pivot->permission == 'Owner')
+                            <span class="badge bg-dark">{{ __($store->pivot->permission) }}</span>
                         @else
-                            <a href="#!" class="dropdown-item">
-                                <i class="ti ti-lock"></i>
-                                <span>{{ $store->name }}</span>
-                                @if (isset($store->pivot->permission))
-                                    @if ($store->pivot->permission == 'Owner')
-                                        <span class="badge bg-dark">{{ __($store->pivot->permission) }}</span>
-                                    @else
-                                        <span class="badge bg-dark">{{ __('Shared') }}</span>
-                                    @endif
-                                @endif
-                            </a>
+                            <span class="badge bg-dark">{{ __('Shared') }}</span>
                         @endif
-                    @endforeach
-                    <div class="dropdown-divider m-0"></div>
-                </div>
-                </li>
+                    @endif
+                </a>
             @endif
+        @endforeach
+
+        <div class="dropdown-divider m-0"></div>
+    </div>
+</li>
+@endif
+
+{{-- =============================================== --}}
+{{-- ================= QR STORES DROPDOWN =========== --}}
+{{-- =============================================== --}}
+{{-- @if (Auth::user()->type !== 'super admin')
+<li class="dropdown dash-h-item drp-language">
+    <a class="dash-head-link dropdown-toggle arrow-none me-0 cust-btn"
+       data-bs-toggle="dropdown"
+       href="#"
+       role="button"
+       aria-haspopup="false"
+       aria-expanded="false"
+       data-bs-toggle="tooltip"
+       data-bs-placement="bottom"
+       data-bs-original-title="{{ __('Select your QR store') }}">
+        <i class="ti ti-qrcode"></i>
+        <span class="hide-mob">{{ $qrLabel }}</span>
+        <i class="ti ti-chevron-down drp-arrow nocolor"></i>
+    </a>
+
+    <div class="dropdown-menu dash-h-dropdown dropdown-menu-end">
+        @forelse ($qrStores as $store)
+            @php $isCurrent = ($currentId == $store->id); @endphp
+
+            @if ($store->is_store_enabled == 1)
+                <a href="{{ $isCurrent ? '#' : route('change_store', $store->id) }}" class="dropdown-item">
+                    @if ($isCurrent)
+                        <i class="ti ti-checks text-primary"></i>
+                    @endif
+                    <span>{{ $store->name }}</span>
+                </a>
+            @else
+                <a href="#!" class="dropdown-item">
+                    <i class="ti ti-lock"></i>
+                    <span>{{ $store->name }}</span>
+                    @if (isset($store->pivot->permission))
+                        @if ($store->pivot->permission == 'Owner')
+                            <span class="badge bg-dark">{{ __($store->pivot->permission) }}</span>
+                        @else
+                            <span class="badge bg-dark">{{ __('Shared') }}</span>
+                        @endif
+                    @endif
+                </a>
+            @endif
+        @empty
+            <span class="dropdown-item-text text-muted">{{ __('No QR stores') }}</span>
+        @endforelse
+
+        <div class="dropdown-divider m-0"></div>
+    </div>
+</li>
+@endif --}}
+@if (Auth::user()->type !== 'super admin')
+<li class="dash-h-item">
+  <a class="dash-head-link cust-btn"
+     href="{{ route('stores.qr.index') }}"
+     data-bs-toggle="tooltip"
+     data-bs-placement="bottom"
+     title="{{ __('View all QR Payments') }}">
+      <i class="ti ti-qrcode"></i>
+      <span class="hide-mob">{{ __('QR Payments') }}</span>
+  </a>
+</li>
+@endif
+
+
+
+            
             <li class="dropdown dash-h-item drp-language">
                 <a class="dash-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
                     role="button" aria-haspopup="false" aria-expanded="false">

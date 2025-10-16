@@ -107,17 +107,44 @@ class StoreController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-        if(\Auth::user()->can('Create Store')){
-            $user = \Auth::user();
-            $store_settings = Store::where('id', $user->current_store)->first();
-            return view('admin_store.create',compact('store_settings'));
-        }
-        else{
-            return redirect()->back()->with('error', 'Permission denied.');
-        }
+    // public function create()
+    // {
+    //     if(\Auth::user()->can('Create Store')){
+    //         $user = \Auth::user();
+    //         $store_settings = Store::where('id', $user->current_store)->first();
+    //         return view('admin_store.create',compact('store_settings'));
+    //     }
+    //     else{
+    //         return redirect()->back()->with('error', 'Permission denied.');
+    //     }
+    // }
+    public function create(Request $request)
+{
+    if (!\Auth::user()->can('Create Store')) {
+        return redirect()->back()->with('error', 'Permission denied.');
     }
+
+    $user   = \Auth::user();
+    $type   = $request->query('type', 'store');   // 'qr' or 'store'
+    $isQr   = ($type === 'qr');
+
+    // Data the view already uses
+    $plan        = Plan::find($user->plan);
+    $settings    = Utility::settings();
+    $theme_json  = Utility::themeOne();
+
+    // Current store (may be null)
+    $current = $user->current_store ? Store::find($user->current_store) : null;
+
+    // Provide safe defaults for the theme picker / selection
+    $store_settings = [
+        'theme_dir'    => $current->theme_dir   ?? ($isQr ? 'theme5'   : 'theme1'),
+        'store_theme'  => $current->store_theme ?? ($isQr ? 'theme5-v1': 'theme1-v1'),
+    ];
+
+    // Pass $type (and convenient $isQr) so Blade can branch the form
+    return view('admin_store.create', compact('type', 'isQr', 'plan', 'settings', 'theme_json', 'store_settings'));
+}
 
     /**
      * Store a newly created resource in storage.
@@ -126,181 +153,452 @@ class StoreController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        if (\Auth::user()->type == 'super admin') {
-            if(\Auth::user()->can('Create Store')){
-                $validator = \Validator::make(
-                    $request->all(), [
-                                    'store_name' => 'required|max:120',
-                                    'email' => 'required|email|unique:stores|unique:users,email',
-                                    // 'password' => 'required|max:120',
-                                    'name' => 'required|max:120',
-                                ]
-                );
-                if($validator->fails())
-                {
-                    $messages = $validator->getMessageBag();
+    // public function store(Request $request)
+    // {
+    //     if (\Auth::user()->type == 'super admin') {
+    //         if(\Auth::user()->can('Create Store')){
+    //             $validator = \Validator::make(
+    //                 $request->all(), [
+    //                                 'store_name' => 'required|max:120',
+    //                                 'email' => 'required|email|unique:stores|unique:users,email',
+    //                                 // 'password' => 'required|max:120',
+    //                                 'name' => 'required|max:120',
+    //                             ]
+    //             );
+    //             if($validator->fails())
+    //             {
+    //                 $messages = $validator->getMessageBag();
 
-                    return redirect()->back()->with('error', $messages->first());
-                }
+    //                 return redirect()->back()->with('error', $messages->first());
+    //             }
 
-                do {
-                    $refferal_code = rand(100000 , 999999);
-                    $checkCode = User::where('type','Owner')->where('referral_code', $refferal_code)->get();
-                }
-                while ($checkCode->count());
+    //             do {
+    //                 $refferal_code = rand(100000 , 999999);
+    //                 $checkCode = User::where('type','Owner')->where('referral_code', $refferal_code)->get();
+    //             }
+    //             while ($checkCode->count());
                 
-                $settings = Utility::settings();
-                $objUser = User::create(
-                    [
-                        'name' => $request['name'],
-                        'email' => $request['email'],
-                        'email_verified_at' => date("Y-m-d H:i:s"),
-                        'password' => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? Hash::make($request['password']) : null,
-                        'type' => 'Owner',
-                        'plan' => Plan::first()->id,
-                        'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
-                        'created_by' => \Auth::user()->id,
-                        'is_active'         => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
-                        'is_enable_login'   => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
-                        'referral_code'     => $refferal_code,
-                    ]
-                );
-                $objStore = Store::create(
-                    [
-                        'name' => $request['store_name'],
-                        'email' => $request['email'],
-                        'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
-                        'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
-                        'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
-                        'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
-                        'currency_code' => !empty($settings->currency) ? $settings->currency : 'USD',
-                        'door' => !empty($request['door_switch'])? $request['door_switch'] : 'off',
-                        'board_id' => !empty($request['door_switch']) && $request['door_switch'] == 'on' ? $request['board_id'] : null,
-                        'paypal_mode' => 'sandbox',
-                        'created_by' => $objUser->id,
-                    ]
-                );
-                $objStore->is_store_enabled = 1;
-                $objStore->enable_storelink = 'on';
-                $objStore->content = 'Hi,
-                                    *Welcome to* {store_name},
-                                    Your order is confirmed & your order no. is {order_no}
-                                    Your order detail is:
-                                    Name : {customer_name}
-                                    Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
-                                    ~~~~~~~~~~~~~~~~
-                                    {item_variable}
-                                    ~~~~~~~~~~~~~~~~
-                                    Qty Total : {qty_total}
-                                    Sub Total : {sub_total}
-                                    Discount Price : {discount_amount}
-                                    Shipping Price : {shipping_amount}
-                                    Tax : {total_tax}
-                                    Total : {final_total}
-                                    ~~~~~~~~~~~~~~~~~~
-                                    To collect the order you need to show the receipt at the counter.
-                                    Thanks {store_name}
-                                    ';
-                $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
-                $objStore->theme_dir = 'theme1';
-                $objStore->store_theme = 'theme1-v1';
-                $objStore->save();
-                $objUser->current_store = $objStore->id;
-                $objUser->lang  = !empty($settings['default_language']) ? $settings['default_language'] : 'en';
-                $objUser->plan         = Plan::first()->id;
-                $objUser->save();
-                $objUser->assignRole('Owner');
-                UserStore::create(
-                    [
-                        'user_id' => $objUser->id,
-                        'store_id' => $objStore->id,
-                        'permission' => 'Owner',
-                    ]
-                );
+    //             $settings = Utility::settings();
+    //             $objUser = User::create(
+    //                 [
+    //                     'name' => $request['name'],
+    //                     'email' => $request['email'],
+    //                     'email_verified_at' => date("Y-m-d H:i:s"),
+    //                     'password' => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? Hash::make($request['password']) : null,
+    //                     'type' => 'Owner',
+    //                     'plan' => Plan::first()->id,
+    //                     'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
+    //                     'created_by' => \Auth::user()->id,
+    //                     'is_active'         => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
+    //                     'is_enable_login'   => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
+    //                     'referral_code'     => $refferal_code,
+    //                 ]
+    //             );
+    //             $objStore = Store::create(
+    //                 [
+    //                     'name' => $request['store_name'],
+    //                     'email' => $request['email'],
+    //                     'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
+    //                     'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
+    //                     'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
+    //                     'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
+    //                     'currency_code' => !empty($settings->currency) ? $settings->currency : 'USD',
+    //                     'door' => !empty($request['door_switch'])? $request['door_switch'] : 'off',
+    //                     'board_id' => !empty($request['door_switch']) && $request['door_switch'] == 'on' ? $request['board_id'] : null,
+    //                     'paypal_mode' => 'sandbox',
+    //                     'created_by' => $objUser->id,
+    //                 ]
+    //             );
+    //             $objStore->is_store_enabled = 1;
+    //             $objStore->enable_storelink = 'on';
+    //             $objStore->content = 'Hi,
+    //                                 *Welcome to* {store_name},
+    //                                 Your order is confirmed & your order no. is {order_no}
+    //                                 Your order detail is:
+    //                                 Name : {customer_name}
+    //                                 Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
+    //                                 ~~~~~~~~~~~~~~~~
+    //                                 {item_variable}
+    //                                 ~~~~~~~~~~~~~~~~
+    //                                 Qty Total : {qty_total}
+    //                                 Sub Total : {sub_total}
+    //                                 Discount Price : {discount_amount}
+    //                                 Shipping Price : {shipping_amount}
+    //                                 Tax : {total_tax}
+    //                                 Total : {final_total}
+    //                                 ~~~~~~~~~~~~~~~~~~
+    //                                 To collect the order you need to show the receipt at the counter.
+    //                                 Thanks {store_name}
+    //                                 ';
+    //             $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
+    //             $objStore->theme_dir = 'theme1';
+    //             $objStore->store_theme = 'theme1-v1';
+    //             $objStore->save();
+    //             $objUser->current_store = $objStore->id;
+    //             $objUser->lang  = !empty($settings['default_language']) ? $settings['default_language'] : 'en';
+    //             $objUser->plan         = Plan::first()->id;
+    //             $objUser->save();
+    //             $objUser->assignRole('Owner');
+    //             UserStore::create(
+    //                 [
+    //                     'user_id' => $objUser->id,
+    //                     'store_id' => $objStore->id,
+    //                     'permission' => 'Owner',
+    //                 ]
+    //             );
 
-                try {
-                    $dArr = [
-                        'owner_name' => $objUser->name,
-                        'owner_email' => $objUser->email,
-                        'owner_password' => $request->password,
-                    ];
-                    $resp = Utility::sendEmailTemplate('Owner And Store Created', $objUser->email, $dArr, $objStore);
-                } catch (\Exception $e) {
+    //             try {
+    //                 $dArr = [
+    //                     'owner_name' => $objUser->name,
+    //                     'owner_email' => $objUser->email,
+    //                     'owner_password' => $request->password,
+    //                 ];
+    //                 $resp = Utility::sendEmailTemplate('Owner And Store Created', $objUser->email, $dArr, $objStore);
+    //             } catch (\Exception $e) {
     
-                    // $smtp_error = "<br><span class='text-danger'>" . __('E-Mail has been not sent due to SMTP configuration') . '</span>';
-                }
+    //                 // $smtp_error = "<br><span class='text-danger'>" . __('E-Mail has been not sent due to SMTP configuration') . '</span>';
+    //             }
 
-                // return redirect()->back()->with('success', __('Successfully Created!')) . ((isset($smtp_error)) ? $smtp_error : '');
-                return redirect()->back()->with('success', __('Successfully Created!' . ((isset($resp['error'])) ? '<br><span class="text-danger">' . $resp['error'] . '</span>' : '')));
-            }
-            else{
-                return redirect()->back()->with('error', 'Permission denied.');
-            }
+    //             // return redirect()->back()->with('success', __('Successfully Created!')) . ((isset($smtp_error)) ? $smtp_error : '');
+    //             return redirect()->back()->with('success', __('Successfully Created!' . ((isset($resp['error'])) ? '<br><span class="text-danger">' . $resp['error'] . '</span>' : '')));
+    //         }
+    //         else{
+    //             return redirect()->back()->with('error', 'Permission denied.');
+    //         }
     
-        } else {
-            $user = \Auth::user();
-            $total_store = $user->countStore();
-            $creator = User::find($user->creatorId());
-            $plan = Plan::find($creator->plan);
-            $settings = Utility::settings();
-            if ($total_store < $plan->max_stores || $plan->max_stores == -1) {
-                $objStore = Store::create(
-                    [
-                        'created_by' => \Auth::user()->id,
-                        'name' => $request['store_name'],
-                        'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
-                        'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
-                        'lang' => !empty( $user->lang) ? $user->lang : 'en',
-                        'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
-                        'currency_code' => !empty($settings['currency']) ? $settings['currency'] : 'USD',
-                        'paypal_mode' => 'sandbox',
-                    ]
-                );
-                $objStore->email = \Auth::user()->email;
-                $objStore->is_store_enabled = 1;
-                $objStore->enable_storelink = 'on';
-                $objStore->content = 'Hi,
-                                    *Welcome to* {store_name},
-                                    Your order is confirmed & your order no. is {order_no}
-                                    Your order detail is:
-                                    Name : {customer_name}
-                                    Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
-                                    ~~~~~~~~~~~~~~~~
-                                    {item_variable}
-                                    ~~~~~~~~~~~~~~~~
-                                    Qty Total : {qty_total}
-                                    Sub Total : {sub_total}
-                                    Discount Price : {discount_amount}
-                                    Shipping Price : {shipping_amount}
-                                    Tax : {total_tax}
-                                    Total : {final_total}
-                                    ~~~~~~~~~~~~~~~~~~
-                                    To collect the order you need to show the receipt at the counter.
-                                    Thanks {store_name}
-                                    ';
-                $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
-                $objStore->theme_dir = isset($request['themefile'])?$request['themefile']:'theme1';
-                $objStore->store_theme = isset($request['theme_color'])?$request['theme_color']:'theme1-v1';
-                $objStore->save();
-                \Auth::user()->current_store = $objStore->id;
-                \Auth::user()->save();
-                UserStore::create(
-                    [
-                        'user_id' => \Auth::user()->id,
-                        'store_id' => $objStore->id,
-                        'permission' => 'Owner',
-                    ]
-                );
+    //     } else {
+    //         $user = \Auth::user();
+    //         $total_store = $user->countStore();
+    //         $creator = User::find($user->creatorId());
+    //         $plan = Plan::find($creator->plan);
+    //         $settings = Utility::settings();
+    //         if ($total_store < $plan->max_stores || $plan->max_stores == -1) {
+    //             $objStore = Store::create(
+    //                 [
+    //                     'created_by' => \Auth::user()->id,
+    //                     'name' => $request['store_name'],
+    //                     'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
+    //                     'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
+    //                     'lang' => !empty( $user->lang) ? $user->lang : 'en',
+    //                     'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
+    //                     'currency_code' => !empty($settings['currency']) ? $settings['currency'] : 'USD',
+    //                     'paypal_mode' => 'sandbox',
+    //                 ]
+    //             );
+    //             $objStore->email = \Auth::user()->email;
+    //             $objStore->is_store_enabled = 1;
+    //             $objStore->enable_storelink = 'on';
+    //             $objStore->content = 'Hi,
+    //                                 *Welcome to* {store_name},
+    //                                 Your order is confirmed & your order no. is {order_no}
+    //                                 Your order detail is:
+    //                                 Name : {customer_name}
+    //                                 Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
+    //                                 ~~~~~~~~~~~~~~~~
+    //                                 {item_variable}
+    //                                 ~~~~~~~~~~~~~~~~
+    //                                 Qty Total : {qty_total}
+    //                                 Sub Total : {sub_total}
+    //                                 Discount Price : {discount_amount}
+    //                                 Shipping Price : {shipping_amount}
+    //                                 Tax : {total_tax}
+    //                                 Total : {final_total}
+    //                                 ~~~~~~~~~~~~~~~~~~
+    //                                 To collect the order you need to show the receipt at the counter.
+    //                                 Thanks {store_name}
+    //                                 ';
+    //             $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
+    //             $objStore->theme_dir = isset($request['themefile'])?$request['themefile']:'theme1';
+    //             $objStore->store_theme = isset($request['theme_color'])?$request['theme_color']:'theme1-v1';
+    //             $objStore->save();
+    //             \Auth::user()->current_store = $objStore->id;
+    //             \Auth::user()->save();
+    //             UserStore::create(
+    //                 [
+    //                     'user_id' => \Auth::user()->id,
+    //                     'store_id' => $objStore->id,
+    //                     'permission' => 'Owner',
+    //                 ]
+    //             );
 
-                return redirect()->back()->with('success', __('Successfully Created!'));
-            } else {
-                return redirect()->back()->with('error', __('Your Store limit is over, Please upgrade plan'));
-            }
-        }
+    //             return redirect()->back()->with('success', __('Successfully Created!'));
+    //         } else {
+    //             return redirect()->back()->with('error', __('Your Store limit is over, Please upgrade plan'));
+    //         }
+    //     }
       
+    // }
+    public function store(Request $request)
+{
+    // ===== Detect QR mode (hidden input 'mode=qr' OR URL ?type=qr) =====
+    $mode = $request->input('mode', $request->query('type'));
+
+   if ($mode === 'qr') {
+    $user = \Auth::user();
+
+    // plan checks (unchanged)
+    if ($user->type !== 'super admin') {
+        $total_store = $user->countStore();
+        $creator     = User::find($user->creatorId());
+        $plan        = Plan::find($creator->plan);
+        if (!($total_store < $plan->max_stores || $plan->max_stores == -1)) {
+            return redirect()->back()->with('error', __('Your Store limit is over, Please upgrade plan'));
+        }
     }
+
+    // validate mobile
+    $validator = \Validator::make(
+        $request->all(),
+        ['mobile' => ['required','string','regex:/^\+?[0-9]{8,15}$/']],
+        ['mobile.regex' => __('Enter a valid mobile.')]
+    );
+    if ($validator->fails()) {
+        return redirect()->back()->with('error', $validator->getMessageBag()->first());
+    }
+
+    $settings = Utility::settings();
+
+    // Compute next serial + create store inside a transaction
+    $objStore = DB::transaction(function () use ($user, $settings, $request) {
+        $maxSerial  = Store::where('created_by', $user->id)
+                        ->where('type', 'qr')
+                        ->lockForUpdate()
+                        ->max('qr_serial');
+        $nextSerial = (int) $maxSerial + 1;  // 1,2,3,...
+
+        $store = Store::create([
+            'created_by'    => $user->id,
+            'name'          => 'QR ' . $nextSerial, // <- auto name: QR 1, QR 2, ...
+            'type'          => 'qr',
+            'qr_serial'     => $nextSerial,         // <- save serial
+            'mobile'        => $request->mobile,    // <- save mobile
+            'email'         => $user->email,
+            'logo'          => $settings['logo'] ?? 'logo-dark.png',
+            'invoice_logo'  => $settings['logo'] ?? 'invoice_logo.png',
+            'lang'          => $user->lang ?: ($settings['default_language'] ?? 'en'),
+            'currency'      => $settings['currency_symbol'] ?? '$',
+            'currency_code' => $settings['currency'] ?? 'USD',
+            'paypal_mode'   => 'sandbox',
+            'theme_dir'     => 'theme5',
+            'store_theme'   => 'theme5-v1',
+        ]);
+
+        // defaults
+        $store->is_store_enabled = 1;
+        $store->enable_storelink = 'on';
+        $store->content = 'Hi,
+*Welcome to* {store_name},
+Your order is confirmed & your order no. is {order_no}
+Your order detail is:
+Name : {customer_name}
+Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
+~~~~~~~~~~~~~~~~
+{item_variable}
+~~~~~~~~~~~~~~~~
+Qty Total : {qty_total}
+Sub Total : {sub_total}
+Discount Price : {discount_amount}
+Shipping Price : {shipping_amount}
+Tax : {total_tax}
+Total : {final_total}
+~~~~~~~~~~~~~~~~~~
+To collect the order you need to show the receipt at the counter.
+Thanks {store_name}
+';
+        $store->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
+        $store->save();
+
+        return $store; // <-- return from transaction
+    }); // <---- CLOSES the DB::transaction(...)
+    // ---------------- after transaction ----------------
+
+    // Link user ↔ store (same as your non-SA path)
+    \Auth::user()->current_store = $objStore->id;
+    \Auth::user()->save();
+
+    UserStore::create([
+        'user_id'    => \Auth::id(),
+        'store_id'   => $objStore->id,
+        'permission' => 'Owner',
+    ]);
+
+    return redirect()->back()->with('success', __('QR Store created successfully (Theme 5).'));
+}
+
+
+    // ===== ORIGINAL LOGIC (unchanged) =====
+    if (\Auth::user()->type == 'super admin') {
+        if(\Auth::user()->can('Create Store')){
+            $validator = \Validator::make(
+                $request->all(), [
+                                'store_name' => 'required|max:120',
+                                'email' => 'required|email|unique:stores|unique:users,email',
+                                // 'password' => 'required|max:120',
+                                'name' => 'required|max:120',
+                            ]
+            );
+            if($validator->fails())
+            {
+                $messages = $validator->getMessageBag();
+
+                return redirect()->back()->with('error', $messages->first());
+            }
+
+            do {
+                $refferal_code = rand(100000 , 999999);
+                $checkCode = User::where('type','Owner')->where('referral_code', $refferal_code)->get();
+            }
+            while ($checkCode->count());
+            
+            $settings = Utility::settings();
+            $objUser = User::create(
+                [
+                    'name' => $request['name'],
+                    'email' => $request['email'],
+                    'email_verified_at' => date("Y-m-d H:i:s"),
+                    'password' => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? Hash::make($request['password']) : null,
+                    'type' => 'Owner',
+                    'plan' => Plan::first()->id,
+                    'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
+                    'created_by' => \Auth::user()->id,
+                    'is_active'         => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
+                    'is_enable_login'   => !empty($request['password_switch']) && $request['password_switch'] == 'on' ? 1 : 0,
+                    'referral_code'     => $refferal_code,
+                ]
+            );
+            $objStore = Store::create(
+                [
+                    'name' => $request['store_name'],
+                     'type'        => 'store', 
+                    'email' => $request['email'],
+                    'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
+                    'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
+                    'lang' => !empty($settings['default_language']) ? $settings['default_language'] : 'en',
+                    'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
+                    'currency_code' => !empty($settings->currency) ? $settings->currency : 'USD',
+                    'door' => !empty($request['door_switch'])? $request['door_switch'] : 'off',
+                    'board_id' => !empty($request['door_switch']) && $request['door_switch'] == 'on' ? $request['board_id'] : null,
+                    'paypal_mode' => 'sandbox',
+                    'created_by' => $objUser->id,
+                ]
+            );
+            $objStore->is_store_enabled = 1;
+            $objStore->enable_storelink = 'on';
+            $objStore->content = 'Hi,
+                                *Welcome to* {store_name},
+                                Your order is confirmed & your order no. is {order_no}
+                                Your order detail is:
+                                Name : {customer_name}
+                                Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
+                                ~~~~~~~~~~~~~~~~
+                                {item_variable}
+                                ~~~~~~~~~~~~~~~~
+                                Qty Total : {qty_total}
+                                Sub Total : {sub_total}
+                                Discount Price : {discount_amount}
+                                Shipping Price : {shipping_amount}
+                                Tax : {total_tax}
+                                Total : {final_total}
+                                ~~~~~~~~~~~~~~~~~~
+                                To collect the order you need to show the receipt at the counter.
+                                Thanks {store_name}
+                                ';
+            $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
+            $objStore->theme_dir = 'theme1';
+            $objStore->store_theme = 'theme1-v1';
+            $objStore->save();
+            $objUser->current_store = $objStore->id;
+            $objUser->lang  = !empty($settings['default_language']) ? $settings['default_language'] : 'en';
+            $objUser->plan         = Plan::first()->id;
+            $objUser->save();
+            $objUser->assignRole('Owner');
+            UserStore::create(
+                [
+                    'user_id' => $objUser->id,
+                    'store_id' => $objStore->id,
+                    'permission' => 'Owner',
+                ]
+            );
+
+            try {
+                $dArr = [
+                    'owner_name' => $objUser->name,
+                    'owner_email' => $objUser->email,
+                    'owner_password' => $request->password,
+                ];
+                $resp = Utility::sendEmailTemplate('Owner And Store Created', $objUser->email, $dArr, $objStore);
+            } catch (\Exception $e) {
+                // $smtp_error = "<br><span class='text-danger'>" . __('E-Mail has been not sent due to SMTP configuration') . '</span>';
+            }
+
+            return redirect()->back()->with('success', __('Successfully Created!' . ((isset($resp['error'])) ? '<br><span class="text-danger">' . $resp['error'] . '</span>' : '')));
+        }
+        else{
+            return redirect()->back()->with('error', 'Permission denied.');
+        }
+
+    } else {
+        $user = \Auth::user();
+        $total_store = $user->countStore();
+        $creator = User::find($user->creatorId());
+        $plan = Plan::find($creator->plan);
+        $settings = Utility::settings();
+        if ($total_store < $plan->max_stores || $plan->max_stores == -1) {
+            $objStore = Store::create(
+                [
+                    'created_by' => \Auth::user()->id,
+                    'name' => $request['store_name'],
+                    'logo' => !empty($settings['logo']) ? $settings['logo'] : 'logo-dark.png',
+                    'invoice_logo' => !empty($settings['logo']) ? $settings['logo'] : 'invoice_logo.png',
+                    'lang' => !empty( $user->lang) ? $user->lang : 'en',
+                    'currency' => !empty($settings['currency_symbol']) ? $settings['currency_symbol'] : '$',
+                    'currency_code' => !empty($settings['currency']) ? $settings['currency'] : 'USD',
+                    'paypal_mode' => 'sandbox',
+                ]
+            );
+            $objStore->email = \Auth::user()->email;
+            $objStore->is_store_enabled = 1;
+            $objStore->enable_storelink = 'on';
+            $objStore->content = 'Hi,
+                                *Welcome to* {store_name},
+                                Your order is confirmed & your order no. is {order_no}
+                                Your order detail is:
+                                Name : {customer_name}
+                                Address : {billing_address} {billing_city} , {shipping_address} {shipping_city}
+                                ~~~~~~~~~~~~~~~~
+                                {item_variable}
+                                ~~~~~~~~~~~~~~~~
+                                Qty Total : {qty_total}
+                                Sub Total : {sub_total}
+                                Discount Price : {discount_amount}
+                                Shipping Price : {shipping_amount}
+                                Tax : {total_tax}
+                                Total : {final_total}
+                                ~~~~~~~~~~~~~~~~~~
+                                To collect the order you need to show the receipt at the counter.
+                                Thanks {store_name}
+                                ';
+            $objStore->item_variable = '{sku} : {quantity} x {product_name} - {variant_name} + {item_tax} = {item_total}';
+            $objStore->theme_dir = isset($request['themefile'])?$request['themefile']:'theme1';
+            $objStore->store_theme = isset($request['theme_color'])?$request['theme_color']:'theme1-v1';
+            $objStore->save();
+            \Auth::user()->current_store = $objStore->id;
+            \Auth::user()->save();
+            UserStore::create(
+                [
+                    'user_id' => \Auth::user()->id,
+                    'store_id' => $objStore->id,
+                    'permission' => 'Owner',
+                ]
+            );
+
+            return redirect()->back()->with('success', __('Successfully Created!'));
+        } else {
+            return redirect()->back()->with('error', __('Your Store limit is over, Please upgrade plan'));
+        }
+    }
+}
+
 
     /**
      * Display the specified resource.

@@ -37,8 +37,21 @@ class DashboardController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(Request $request)
     {
+
+      // Save store mobile when posted
+    if ($request->isMethod('post') && $request->has('mobile')) {
+        $request->validate([
+            'mobile' => ['nullable','string','max:32','regex:/^\+?[0-9\s\-()]{6,32}$/'],
+        ]);
+
+        $store = Store::findOrFail(Auth::user()->current_store);
+        $store->mobile = $request->mobile;
+        $store->save();
+
+        return back()->with('success', __('Store mobile updated.'));
+    }
 
         if (!file_exists(storage_path() . "/installed")) {
             header('location:install');
@@ -141,13 +154,14 @@ class DashboardController extends Controller
                         foreach ($orders as $order) {
                             $order_array = json_decode($order->product);
                             $pro_id = [];
+                            
                             foreach ($order_array as $key => $item) {
-                                if (!in_array($item->id, $item_id)) {
-                                    $item_id[] = $item->id;
+                                if (!in_array($item->product_id, $item_id)) {
+                                    $item_id[] = $item->product_id;
                                     $totle_qty[] = $item->quantity;
                                 } else {
 
-                                    $totle_qty[array_search($item->id, $item_id)] += $item->quantity;
+                                    $totle_qty[array_search($item->product_id, $item_id)] += $item->quantity;
                                 }
                             }
                             $totle_sale += $order['price'];
@@ -191,6 +205,102 @@ class DashboardController extends Controller
             }
         }
 
+    }
+// add qr stores functions
+/**
+     * Show all QR stores the current user can access, with QR + mobile.
+     */
+   // App\Http\Controllers\DashboardController.php
+
+public function qrStores(Request $request)
+{
+    $user = Auth::user();
+
+    $stores = Store::query()
+        ->where('theme_dir', 'theme5') // ← only theme5
+        ->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+              ->orWhereIn('id', UserStore::where('user_id', $user->id)
+                  ->pluck('store_id'));
+        })
+        ->orderBy('name')
+        ->get();
+
+    return view('partials.admin.qr-index', compact('stores'));
+}
+public function updateStoreMobile(Request $request, Store $store)
+{
+    // authorize (owner or shared owner — adjust to your rules)
+    $userId = Auth::id();
+    $isOwner = $store->created_by == $userId;
+    $isSharedOwner = UserStore::where('user_id', $userId)
+        ->where('store_id', $store->id)
+        ->exists();
+
+    abort_unless($isOwner || $isSharedOwner, 403);
+
+    // validate (loosen/tighten as you like)
+    $data = $request->validate([
+        'mobile' => ['nullable', 'string', 'max:30'],
+        // example strict KSA format: 'regex:/^\+966[0-9]{9}$/'
+    ]);
+
+    $store->mobile = $data['mobile'];
+    $store->save();
+
+    return back()->with('success', __('Mobile number updated.'));
+}
+// public function updateStoreMobile(Request $request, Store $store)
+// {
+//     // Basic permission check (adjust to your policy/roles)
+//     $userId = Auth::id();
+//     $isOwner = $store->created_by == $userId;
+//     $isSharedOwner = UserStore::where('user_id', $userId)
+//         ->where('store_id', $store->id)
+//         ->where('permission', 'Owner') // adjust if your column/value differs
+//         ->exists();
+
+//     if (! $isOwner && ! $isSharedOwner) {
+//         abort(403);
+//     }
+
+//     // Validate (keep loose or tighten with your own regex)
+//     $data = $request->validate([
+//         'mobile' => ['nullable', 'string', 'max:30'],
+//         // Example stricter SA format: 'regex:/^\+966[0-9]{9}$/'
+//     ]);
+
+//     $store->mobile = $data['mobile'];
+//     $store->save();
+
+//     return back()->with('success', __('Mobile number updated.'));
+// }
+
+
+    /**
+     * Switch to a store and go to its dashboard.
+     * If you already use a dedicated "change_store" route, you can just redirect to it.
+     */
+    public function visitStore(Store $store)
+    {
+        $user = Auth::user();
+
+        // Access guard: owner or shared AND store enabled
+        $hasAccess = ($store->created_by == $user->id)
+            || UserStore::where('user_id', $user->id)->where('store_id', $store->id)->exists();
+
+        abort_unless($hasAccess && (int) $store->is_store_enabled === 1, 403, __('Unauthorized or store disabled.'));
+
+        // If your app uses a specific route to set current store, redirect to it:
+        // return redirect()->route('change_store', $store->id);
+
+        // Otherwise set session here, then redirect to dashboard
+        session(['current_store' => $store->id]);
+
+        return redirect()->route('dashboard')->with(
+            'success',
+            __('Switched to ":name".', ['name' => $store->name ?? $store->slug])
+        );
     }
 
     public function getOrderChart($arrParam,$userstore = null)
@@ -383,4 +493,3 @@ class DashboardController extends Controller
 
 
 }
-//end
