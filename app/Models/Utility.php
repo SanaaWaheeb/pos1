@@ -730,7 +730,7 @@ class Utility extends Model
             'theme5' => [
                 'theme5-v1' => [
                     'img_path' => asset(Storage::url('uploads/store_theme/theme5/Home.png')),
-                    'color' => '007aff',
+                    'color' => '2b2d42',
                 ],
                 'theme5-v2' => [
                     'img_path' => asset(Storage::url('uploads/store_theme/theme5/Home-1.png')),
@@ -746,7 +746,7 @@ class Utility extends Model
                 ],
                 'theme5-v5' => [
                     'img_path' => asset(Storage::url('uploads/store_theme/theme5/Home-4.png')),
-                    'color' => '2b2d42',
+                    'color' => '007aff',
                 ],
             ],
 
