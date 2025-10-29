@@ -44,7 +44,7 @@
     --second-font: 'silkaregular', sans-serif;
     --third-font: 'Poppins', sans-serif;
     --Playfair-font: 'Playfair Display', serif;
-    --theme-color: #007AFF;
+    --theme-color: #2b2d42;
     --second-color: #273444;
     --third-color: #afafaf;
     --grey-color: #EBEBEB;
@@ -132,7 +132,7 @@
     --second-font: 'silkaregular', sans-serif;
     --third-font: 'Poppins', sans-serif;
     --Playfair-font: 'Playfair Display', serif;
-    --theme-color: #2b2d42;
+    --theme-color:  #007AFF;
     --second-color: #273444;
     --third-color: #afafaf;
     --grey-color: #EBEBEB;
@@ -4703,8 +4703,8 @@ div#self-payment {
     font-weight: bold;
     font-size: 2rem;
     cursor: pointer;
-    //border-bottom-left-radius: 30px;
-    //border-bottom-right-radius: 30px;
+    /* //border-bottom-left-radius: 30px;
+    //border-bottom-right-radius: 30px; */
   }
   #self-payment .confirm-bg {
       background-color: #fff;
